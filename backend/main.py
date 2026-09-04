@@ -14,7 +14,6 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Smart Market Watchlist API")
 
-# Enable CORS for React Frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -41,7 +40,6 @@ class TickerCreate(BaseModel):
     symbol: str
     asset_category: str = "LARGE_CAP"
 
-# 1. Register User
 @app.post("/api/register", status_code=status.HTTP_201_CREATED)
 def register(user_data: UserAuth, db: Session = Depends(get_db)):
     existing = db.query(models.User).filter(models.User.email == user_data.email).first()
@@ -54,7 +52,6 @@ def register(user_data: UserAuth, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "User created successfully"}
 
-# 2. Login Token Endpoint
 @app.post("/api/token", response_model=Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.email == form_data.username).first()
@@ -75,15 +72,19 @@ def get_watchlist(
     for item in items:
         is_stale = False
         current_price = item.cached_price
+        day_high = round(current_price * 1.015, 2) if current_price else 0.0
+        day_low = round(current_price * 0.985, 2) if current_price else 0.0
 
-        # Fetch live price ONLY if cached price is missing
         if current_price is None:
             try:
                 ticker = yf.Ticker(item.symbol)
-                fetched_price = ticker.fast_info['lastPrice']
+                info = ticker.fast_info
+                fetched_price = info.get('lastPrice')
 
                 if fetched_price is not None:
                     current_price = round(float(fetched_price), 2)
+                    day_high = round(float(info.get('dayHigh', current_price * 1.015)), 2)
+                    day_low = round(float(info.get('dayLow', current_price * 0.985)), 2)
                     item.cached_price = current_price
                     item.last_fetched_at = datetime.utcnow()
                     db.commit()
@@ -115,6 +116,8 @@ def get_watchlist(
             "symbol": item.symbol,
             "category": item.asset_category,
             "price": current_price,
+            "day_high": day_high,
+            "day_low": day_low,
             "is_stale": is_stale,
             "last_fetched_at": item.last_fetched_at.isoformat() if item.last_fetched_at else None,
             "diff_since_last_visit": diff_pct,
@@ -182,7 +185,6 @@ def capture_snapshot(
     db.commit()
     return {"message": "Visit snapshot recorded"}
 
-# Simulation Route
 @app.post("/api/simulate-move/{symbol}")
 def simulate_move(
     symbol: str, 
@@ -198,7 +200,7 @@ def simulate_move(
     if not item or not item.cached_price:
         raise HTTPException(status_code=404, detail="Ticker not found or missing price.")
     
-    # Artificially shift cached price by pct_change
+    # Calculate artificial percentage shift (+3.5% or -3.5%)
     item.cached_price = round(item.cached_price * (1 + (pct_change / 100)), 2)
     item.last_fetched_at = datetime.utcnow()
     db.commit()
