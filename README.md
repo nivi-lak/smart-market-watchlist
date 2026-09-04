@@ -2,7 +2,7 @@
 
 The **Smart Market Watchlist** is an end-to-end financial intelligence application built to solve a core market-tracking problem: surfacing meaningful asset price shifts relative to user baselines without getting lost in daily market noise.
 
-🔗 **Live Demo:** [https://smart-market-watc-git-f3cb20-nivedithaa-lakshmanasamys-projects.vercel.app/](https://smart-market-watc-git-f3cb20-nivedithaa-lakshmanasamys-projects.vercel.app/)
+🔗 **Live Demo:** [https://smart-market-watchlist-w5em-nrggh0vjk.vercel.app/](https://smart-market-watchlist-w5em-nrggh0vjk.vercel.app/)
 
 ⚙️ **Backend API:** [https://smart-market-watchlist-6a1a.onrender.com](https://smart-market-watchlist-6a1a.onrender.com) 
 
