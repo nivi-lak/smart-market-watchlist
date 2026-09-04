@@ -43,19 +43,18 @@ class TickerCreate(BaseModel):
 
 @app.post("/api/register")
 @app.post("/api/register")
+@app.post("/api/register")
 def register_user(user_data: UserRegisterSchema, db: Session = Depends(get_db)):
-    # Check if user already exists by email
+    # Check if user already exists
     existing_user = db.query(models.User).filter(models.User.email == user_data.email).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered. Please sign in.")
     
-    # Hash password & create user
     hashed_password = auth.get_password_hash(user_data.password)
     
-    # Pass both email and username (set username = email) to satisfy SQLite schema constraints
+    # Pass ONLY email and hashed_password (no username)
     new_user = models.User(
         email=user_data.email, 
-        username=user_data.email, 
         hashed_password=hashed_password
     )
     
