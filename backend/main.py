@@ -8,6 +8,7 @@ from datetime import datetime
 import yfinance as yf
 import auth
 import models
+import database
 from database import engine, get_db
 
 models.Base.metadata.create_all(bind=engine)
@@ -185,12 +186,24 @@ def capture_snapshot(
     db.commit()
     return {"message": "Visit snapshot recorded"}
 
+@app.post("/api/reset-baseline")
+def reset_baseline(
+    current_user: models.User = Depends(auth.get_current_user), 
+    db: Session = Depends(get_db)
+):
+    """Resets all baseline snapshots for the authenticated user."""
+    db.query(models.UserVisitSnapshot).filter(
+        models.UserVisitSnapshot.user_id == current_user.id
+    ).delete()
+    db.commit()
+    return {"message": "Baseline cleared successfully"}
+
 @app.post("/api/simulate-move/{symbol}")
 def simulate_move(
     symbol: str, 
     pct_change: float = 3.5, 
     current_user: models.User = Depends(auth.get_current_user), 
-    db: Session = Depends(get_db)
+    db: Session = Depends(database.get_db)
 ):
     item = db.query(models.WatchlistItem).filter(
         models.WatchlistItem.symbol == symbol.upper(),

@@ -134,6 +134,16 @@ export default function App() {
     }
   };
 
+  const handleResetBaseline = async () => {
+    try {
+      await axios.post(`${API_BASE}/reset-baseline`, {}, getAuthConfig());
+      alert("Baseline cleared! All relative deltas reset to 0.00%.");
+      fetchWatchlist();
+    } catch (err) {
+      setError("Failed to reset baseline");
+    }
+  };
+
   const handleSimulateMove = async (targetSymbol, pctChange = 3.5) => {
     try {
       await axios.post(`${API_BASE}/simulate-move/${targetSymbol}?pct_change=${pctChange}`, {}, getAuthConfig());
@@ -228,12 +238,20 @@ export default function App() {
           <p className="text-xs text-slate-400">Relative Volatility & Change Detection</p>
         </div>
 
+        {/* Header Action Controls */}
         <div className="flex items-center gap-3">
           <button
             onClick={handleCaptureSnapshot}
             className="bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2 rounded-xl text-xs transition cursor-pointer shadow-lg shadow-blue-600/20"
           >
             Save Visit Snapshot
+          </button>
+
+          <button
+            onClick={handleResetBaseline}
+            className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium px-3.5 py-2 rounded-xl text-xs transition border border-slate-700/60 cursor-pointer"
+          >
+            Reset Baseline
           </button>
 
           <div className="flex items-center gap-2 bg-[#131b2e] border border-slate-800/80 px-3 py-1.5 rounded-xl">
@@ -252,9 +270,29 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Inner Workspace */}
+      {/* Main Workspace */}
       <main className="flex-1 overflow-y-auto p-8 space-y-6 w-full">
         
+        {/* Feature #1: Attention Digest Executive Summary Banner */}
+        <div className="bg-[#0e172e] border border-blue-900/60 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4 shadow-xl">
+          <div className="space-y-0.5">
+            <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>
+              Attention Digest
+            </h4>
+            <p className="text-xs text-slate-300">
+              {actionableCount > 0 
+                ? `${actionableCount} monitored asset(s) breached category volatility thresholds since your baseline.`
+                : "All tracked assets are currently trading within expected baseline variance ranges."}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold bg-blue-950 text-blue-300 border border-blue-800 px-3 py-1.5 rounded-xl">
+              {actionableCount} Actionable Shift(s)
+            </span>
+          </div>
+        </div>
+
         {/* Summary Metric Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
           
@@ -307,7 +345,7 @@ export default function App() {
         {/* Full-Width Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-6 w-full">
           
-          {/* Watchlist Table */}
+          {/* Watchlist Table (7 Cols) */}
           <div className="lg:col-span-7 space-y-4">
             
             <form onSubmit={handleAdd} className="flex gap-3 bg-[#0f172a] p-3.5 rounded-2xl border border-slate-800">
@@ -375,8 +413,16 @@ export default function App() {
                           </div>
                         </td>
 
+                        {/* Feature #2: Graceful Stale / Cached Price Indicator */}
                         <td className="p-3.5 font-mono text-slate-200">
-                          {item.price ? `$${item.price}` : 'Unavailable'}
+                          <div className="flex flex-col">
+                            <span>{item.price ? `$${item.price}` : 'Unavailable'}</span>
+                            {item.is_stale && (
+                              <span className="text-[9px] text-amber-400 font-sans italic">
+                                Cached (Fallback)
+                              </span>
+                            )}
+                          </div>
                         </td>
 
                         <td className="p-3.5 font-mono">
@@ -436,7 +482,7 @@ export default function App() {
 
           </div>
 
-          {/* Analytics Column */}
+          {/* Analytics Column (5 Cols) */}
           <div className="lg:col-span-5 space-y-6">
             
             {/* Bar Chart mapping category colors via Cell children */}
