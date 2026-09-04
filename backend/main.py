@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 from datetime import datetime
 import yfinance as yf
@@ -29,7 +29,7 @@ CATEGORY_THRESHOLDS = {
     "STABLE": 0.75
 }
 
-class UserAuth(BaseModel):
+class UserRegisterSchema(BaseModel):
     email: str
     password: str
 
@@ -41,16 +41,27 @@ class TickerCreate(BaseModel):
     symbol: str
     asset_category: str = "LARGE_CAP"
 
-@app.post("/api/register", status_code=status.HTTP_201_CREATED)
-def register(user_data: UserAuth, db: Session = Depends(get_db)):
-    existing = db.query(models.User).filter(models.User.email == user_data.email).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
+@app.post("/api/register")
+@app.post("/api/register")
+def register_user(user_data: UserRegisterSchema, db: Session = Depends(get_db)):
+    # Check if user already exists by email
+    existing_user = db.query(models.User).filter(models.User.email == user_data.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered. Please sign in.")
     
-    hashed_pwd = auth.get_password_hash(user_data.password)
-    user = models.User(email=user_data.email, hashed_password=hashed_pwd)
-    db.add(user)
+    # Hash password & create user
+    hashed_password = auth.get_password_hash(user_data.password)
+    
+    # Pass both email and username (set username = email) to satisfy SQLite schema constraints
+    new_user = models.User(
+        email=user_data.email, 
+        username=user_data.email, 
+        hashed_password=hashed_password
+    )
+    
+    db.add(new_user)
     db.commit()
+    db.refresh(new_user)
     return {"message": "User created successfully"}
 
 @app.post("/api/token", response_model=Token)

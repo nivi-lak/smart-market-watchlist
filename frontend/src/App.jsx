@@ -4,7 +4,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell 
 } from 'recharts';
 
-const API_BASE = "https://smart-market-watchlist-6a1a.onrender.com";
+const API_BASE = "https://smart-market-watchlist-6a1a.onrender.com/api";
 
 const PRELOAD_TICKERS = [
   { symbol: "AAPL", category: "LARGE_CAP" },
@@ -47,8 +47,12 @@ export default function App() {
     setError("");
     try {
       if (authMode === "register") {
-        await axios.post(`${API_BASE}/register`, { email, password });
-        alert("Registration successful! Please log in.");
+        await axios.post(`${API_BASE}/register`, { 
+          email: email, 
+          username: email, 
+          password: password 
+        });
+        alert("Registration successful! Switching to sign in...");
         setAuthMode("login");
       } else {
         const formData = new URLSearchParams();
@@ -64,7 +68,7 @@ export default function App() {
         setToken(newToken);
       }
     } catch (err) {
-      setError(err.response?.data?.detail || "Authentication failed");
+      setError(err.response?.data?.detail || "Authentication failed. Check your password or try signing in.");
     }
   };
 
