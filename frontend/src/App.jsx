@@ -4,7 +4,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell 
 } from 'recharts';
 
-const API_BASE = "http://127.0.0.1:8000/api";
+const API_BASE = "https://smart-market-watchlist-6a1a.onrender.com";
 
 const PRELOAD_TICKERS = [
   { symbol: "AAPL", category: "LARGE_CAP" },
